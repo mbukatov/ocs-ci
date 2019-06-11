@@ -4,20 +4,16 @@ import logging
 from ocs import defaults, exceptions, constants
 from resources import pod
 from ocsci.testlib import ManageTest, tier1
-from tests.conftest import (
-    create_rbd_storageclass, create_pod, create_pvc, create_ceph_block_pool,
-    create_rbd_secret
-)
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.mark.usefixtures(
-    create_rbd_secret.__name__,
-    create_ceph_block_pool.__name__,
-    create_rbd_storageclass.__name__,
-    create_pvc.__name__,
-    create_pod.__name__
+    "create_rbd_secret",
+    "create_ceph_block_pool",
+    "create_rbd_storageclass",
+    "create_pvc",
+    "create_pod"
 )
 class TestCaseOCS371(ManageTest):
     """
