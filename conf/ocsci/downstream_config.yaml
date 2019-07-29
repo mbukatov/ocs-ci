@@ -11,3 +11,4 @@ ENV_DATA:
   # rook_csi_snapshotter_image:
   # rook_csi_attacher_image:
   cluster_namespace: 'openshift-storage'
+  monitoring_enabled: true
