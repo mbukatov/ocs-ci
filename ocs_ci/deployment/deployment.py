@@ -146,6 +146,20 @@ class Deployment(object):
             f"system:serviceaccount:openshift-monitoring:prometheus-k8s "
             f"-n {config.ENV_DATA['cluster_namespace']}"
         )
+        # HACK: If you would like to drop this hack, make sure that you also
+        # updated docs and write appropriate unit/integration tests for config
+        # processing.
+        if config.ENV_DATA.get('monitoring_enabled') in ("true", "True", True):
+            # RBAC rules for monitoring, based on documentation change in rook:
+            # https://github.com/rook/rook/commit/1b6fe840f6ae7372a9675ba727ecc65326708aa8
+            # HACK: This should be dropped when OCS is managed by OLM
+            apply_oc_resource(
+                'rbac.yaml',
+                self.cluster_path,
+                _templating,
+                config.ENV_DATA,
+                template_dir="monitoring"
+            )
         apply_oc_resource(
             'csi-nodeplugin-rbac_rbd.yaml',
             self.cluster_path,
@@ -238,10 +252,15 @@ class Deployment(object):
             'storage-manifest.yaml', self.cluster_path, _templating,
             config.ENV_DATA
         )
-        create_oc_resource(
-            "service-monitor.yaml", self.cluster_path, _templating,
-            config.ENV_DATA
-        )
+        # HACK: skip creation of rook-ceph-mgr service monitor when monitoring
+        # is enabled (if this were not skipped, the step would fail because
+        # rook would create the service monitor at this point already)
+        # HACK: This should be dropped when OCS is managed by OLM
+        if config.ENV_DATA.get('monitoring_enabled') not in ("true", "True", True):
+            create_oc_resource(
+                "service-monitor.yaml", self.cluster_path, _templating,
+                config.ENV_DATA
+            )
         create_oc_resource(
             "prometheus-rules.yaml", self.cluster_path, _templating,
             config.ENV_DATA
