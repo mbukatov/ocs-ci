@@ -5,6 +5,7 @@ import time
 
 from ocs_ci.framework import config
 from ocs_ci.ocs import constants, ocp
+from ocs_ci.ocs.resources.pod import get_fio_rw_iops
 from ocs_ci.utility.prometheus import PrometheusAPI
 
 
@@ -214,4 +215,53 @@ def workload_stop_ceph_mon():
         msg = f"Downscaled monitors {mons_to_stop} were not replaced"
         assert check_old_mons_deleted, msg
 
+    return measured_op
+
+
+#
+# IO Workloads
+#
+
+
+@pytest.fixture
+def workload_fio_rw_cephfs(pod_factory, pvc_factory):
+    """
+    Run fio rw workload as a workload fixture.
+    """
+    # TODO: generalize this so that workload_fio_rbd doesn't reimplement
+    # business logic
+    interface = constants.CEPHFILESYSTEM
+    pvc_size = 4 # GiB
+
+    pvc = pvc_factory(interface=interface, size=pvc_size)
+    pod = pod_factory(pvc=pvc)
+
+    # TODO: resolve this in run_io() directly
+    interface2storage_type = {
+        constants.CEPHFILESYSTEM: 'fs',
+        constants.CEPHBLOCKPOOL: 'block',
+        }
+
+    def run_fio():
+        """
+        Default (as implemented in ocs-ci) execution of fio workload.
+        """
+        nonlocal pod
+        logger.info("Execution phase of workload_fio_rw_cephfs fixture started")
+        # note: assumptions implemented by underlying ocs-ci functions include:
+        # - the pv is mounted in /var/lib/www/html directory
+        # - pod.pvc attribute is monkey patched to a pod object via pod_factory
+        # - pvc.size contains number of GiB
+        # - there are 2 files with fio cli opts. in ocs_ci/templates/workload
+        pod.run_io(
+            storage_type=interface2storage_type.get(interface),
+            io_direction='rw',
+            rw_ratio=75,
+            size=f"{pvc_size}G",
+            runtime=120)
+        fio_result = get_fio_rw_iops(pod)
+        logger.info("Execution phase of workload_fio_rw_cephfs fixture finished")
+        return fio_result
+
+    measured_op = measure_operation(run_fio)
     return measured_op
