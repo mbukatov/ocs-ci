@@ -5,6 +5,7 @@ import time
 
 from ocs_ci.framework import config
 from ocs_ci.ocs import constants, ocp
+from ocs_ci.ocs.resources.pod import get_fio_rw_iops
 from ocs_ci.utility.prometheus import PrometheusAPI
 
 
@@ -213,5 +214,70 @@ def workload_stop_ceph_mon():
             oc.exec_oc_cmd(f"scale --replicas=1 deployment/{mon}")
         msg = f"Downscaled monitors {mons_to_stop} were not replaced"
         assert check_old_mons_deleted, msg
+
+    return measured_op
+
+
+#
+# IO Workloads
+#
+
+
+def get_run_fio(pod, fio_size):
+    """
+    Returns a run_fio function which will run the workload for the workload
+    fixtures.
+    """
+    def run_fio():
+        """
+        Default (as implemented in ocs-ci) execution of fio workload.
+        """
+        nonlocal pod
+        logger.info("Execution phase of a workload fio fixture started")
+        # note: assumptions implemented by underlying ocs-ci functions include:
+        # - the pv is mounted in /var/lib/www/html directory on the pod
+        # - there are 2 files with fio cli opts. in ocs_ci/templates/workload
+        pod.run_io(
+            storage_type="fs", # HACK: we are using both cephfs and rbd as a filesystem
+            io_direction='rw',
+            rw_ratio=75,
+            size=fio_size,
+            runtime=120)
+        fio_result = get_fio_rw_iops(pod)
+        logger.info("Execution phase of a workload fio fixture finished")
+        return fio_result
+
+    return run_fio
+
+
+@pytest.fixture
+def workload_fio_rw_cephfs(pod_factory, pvc_factory):
+    """
+    Run fio rw workload on cephfs backed volume as a "workload fixture".
+    """
+    pvc_size = 4 # GiB
+    fio_size = f"{pvc_size}G"
+
+    pvc = pvc_factory(interface=constants.CEPHFILESYSTEM, size=pvc_size)
+    pod = pod_factory(pvc=pvc)
+    run_fio = get_run_fio(pod, fio_size)
+    measured_op = measure_operation(run_fio)
+
+    return measured_op
+
+
+@pytest.fixture
+def workload_fio_rw_rbd_ext4(pod_factory, pvc_factory):
+    """
+    Run fio rw workload on ext4 on top of rbd as a "workload fixture".
+    TODO: choices comes from various defaults in ocs-ci, does it make sense?
+    """
+    pvc_size = 4 # GiB
+    fio_size = f"{int(3.7*2**10)}M"
+
+    pvc = pvc_factory(interface=constants.CEPHBLOCKPOOL, size=pvc_size)
+    pod = pod_factory(pvc=pvc)
+    run_fio = get_run_fio(pod, fio_size)
+    measured_op = measure_operation(run_fio)
 
     return measured_op
