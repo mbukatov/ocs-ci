@@ -498,6 +498,9 @@ def get_fio_rw_iops(pod_obj):
     logging.info(
         f"Write: {fio_result.get('jobs')[0].get('write').get('iops')}"
     )
+    # TODO: move the logging above into get_fio_results() and remove this
+    # get_fio_rw_iops() method
+    return fio_result
 
 
 def run_io_in_bg(pod_obj, expect_to_fail=False):
