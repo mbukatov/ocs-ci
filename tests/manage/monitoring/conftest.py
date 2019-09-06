@@ -223,7 +223,7 @@ def workload_stop_ceph_mon():
 #
 
 
-def get_run_fio(pod, fio_size):
+def get_run_fio(pod, fio_size, io_direction, rw_ratio):
     """
     Returns a run_fio function which will run the workload for the workload
     fixtures.
@@ -239,9 +239,9 @@ def get_run_fio(pod, fio_size):
         # - there are 2 files with fio cli opts. in ocs_ci/templates/workload
         pod.run_io(
             storage_type="fs", # HACK: we are using both cephfs and rbd as a filesystem
-            io_direction='rw',
-            rw_ratio=75,
             size=fio_size,
+            io_direction=io_direction,
+            rw_ratio=rw_ratio,
             runtime=120)
         fio_result = get_fio_rw_iops(pod)
         logger.info("Execution phase of a workload fio fixture finished")
@@ -255,12 +255,12 @@ def workload_fio_rw_cephfs(pod_factory, pvc_factory):
     """
     Run fio rw workload on cephfs backed volume as a "workload fixture".
     """
-    pvc_size = 4 # GiB
+    pvc_size = 10 # GiB
     fio_size = f"{pvc_size}G"
 
     pvc = pvc_factory(interface=constants.CEPHFILESYSTEM, size=pvc_size)
     pod = pod_factory(pvc=pvc)
-    run_fio = get_run_fio(pod, fio_size)
+    run_fio = get_run_fio(pod, fio_size, io_direction="rw", rw_ratio=75)
     measured_op = measure_operation(run_fio)
 
     return measured_op
@@ -272,12 +272,12 @@ def workload_fio_rw_rbd_ext4(pod_factory, pvc_factory):
     Run fio rw workload on ext4 on top of rbd as a "workload fixture".
     TODO: choices comes from various defaults in ocs-ci, does it make sense?
     """
-    pvc_size = 4 # GiB
+    pvc_size = 10 # GiB
     fio_size = f"{int(3.7*2**10)}M"
 
     pvc = pvc_factory(interface=constants.CEPHBLOCKPOOL, size=pvc_size)
     pod = pod_factory(pvc=pvc)
-    run_fio = get_run_fio(pod, fio_size)
+    run_fio = get_run_fio(pod, fio_size, io_direction="rw", rw_ratio=75)
     measured_op = measure_operation(run_fio)
 
     return measured_op
