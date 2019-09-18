@@ -52,7 +52,7 @@ def test_bz1729853(storageclass_factory):
     """
     Test covers a bulk delete of CSI based rbd volumes through project delete
     leaves behind some undeleted pvs, with case reported in BZ 1716276 in mind
-    (e.g this deals with RBD only).
+    (which is why this deals with RBD only).
     """
     # create cluster wide resources: a storage classe, secret ...
     rbd_sc = storageclass_factory(constants.CEPHBLOCKPOOL)
@@ -66,7 +66,7 @@ def test_bz1729853(storageclass_factory):
         project.new_project(namespace)
 
         # create few PVcs in the project
-        ocp_pvc = ocp.OCP(kind='PVC', namespace=namespace)
+        ocp_pvc = ocp.OCP(kind=constants.PVC, namespace=namespace)
         total_vols = 100
         logger.info(
             f"now we are going to create {total_vols} PVCs using {rbd_sc.name}")
@@ -77,12 +77,10 @@ def test_bz1729853(storageclass_factory):
 
         logger.info(
             f"now we are going to wait for {total_vols} PVCs to be Bound")
-        # TODO: this function is too slow, I don't need to serialize the whole
-        # object one by one when I'm waiting for 100 resources to get
+        # TODO: this function could be a bit faster, I don't need to serialize
+        # the whole object one by one when I'm waiting for 100 resources to get
         # somewhere, it would be much better to ask for status only of a whole
         # set at once
-        # TODO: actually either I'm using this totally wrong or this is not
-        # usable for my use case in any way
         ocp_pvc.wait_for_resource(
             condition=constants.STATUS_BOUND,
             resource_count=100,
