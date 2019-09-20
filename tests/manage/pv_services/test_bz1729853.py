@@ -77,10 +77,8 @@ def test_bz1729853(storageclass_factory):
 
         logger.info(
             f"now we are going to wait for {total_vols} PVCs to be Bound")
-        # TODO: this function could be a bit faster, I don't need to serialize
-        # the whole object one by one when I'm waiting for 100 resources to get
-        # somewhere, it would be much better to ask for status only of a whole
-        # set at once
+        # Note: wait_for_resource() method could be a bit faster,
+        # reported as https://github.com/red-hat-storage/ocs-ci/issues/778
         ocp_pvc.wait_for_resource(
             condition=constants.STATUS_BOUND,
             resource_count=100,
