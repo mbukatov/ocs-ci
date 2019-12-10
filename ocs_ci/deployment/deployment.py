@@ -105,6 +105,10 @@ class Deployment(object):
         self.ocp_deployment = self.OCPDeployment()
         self.ocp_deployment.deploy_prereq()
         self.ocp_deployment.deploy(log_cli_level)
+        # reconfigure telemeter client if necessary
+        if config.ENV_DATA.get("telemeter_server_url"):
+            self.ocp_deployment.reconfigure_telemeter_client(
+                config.ENV_DATA['telemeter_server_url'])
 
     def label_and_taint_nodes(self):
         """

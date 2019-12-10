@@ -192,3 +192,17 @@ class OCPDeployment:
 
         except Exception:
             logger.error(traceback.format_exc())
+
+    def reconfigure_telemeter_client(self, telemeter_server_url):
+        """
+        Reconfigure openshift telemeter client to send data to a different
+        telemeter server (when one doesn't reconfigure telemeter server, a
+        production telemeter server is used by default).
+
+        Args:
+          telemeter_server_url (str): url of telemeter instance
+        """
+        logger.info((
+            "Reconfiguring openshift telemeter client "
+            f"to send data to {telemeter_server_url}"))
+        # TODO: create the config map
