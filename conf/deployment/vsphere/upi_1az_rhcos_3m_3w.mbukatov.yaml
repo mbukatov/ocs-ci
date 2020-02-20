@@ -1,0 +1,13 @@
+---
+# This config is suppose to use all resources on Datacenter-2 Cluster-1
+DEPLOYMENT:
+  allow_lower_instance_requirements: false
+ENV_DATA:
+  platform: 'vsphere'
+  deployment_type: 'upi'
+  worker_replicas: 3
+  master_replicas: 3
+  worker_num_cpus: '6'
+  master_num_cpus: '4'
+  master_memory: '16384'
+  compute_memory: '21504'
