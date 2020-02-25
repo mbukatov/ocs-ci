@@ -1,7 +1,7 @@
 ---
 # This config is suppose to use all resources on Datacenter-2 Cluster-1
 DEPLOYMENT:
-  allow_lower_instance_requirements: false
+  allow_lower_instance_requirements: true
 ENV_DATA:
   platform: 'vsphere'
   deployment_type: 'upi'
