@@ -6,6 +6,7 @@ from .aws import AWSIPI, AWSUPI
 from .azure import AZUREIPI
 from .vmware import VSPHEREUPI
 from .baremetal import BAREMETALUPI
+from .azure import AZUREIPI
 
 logger = logging.getLogger(__name__)
 
